@@ -1,0 +1,32 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@hono/hono@^4.6.10": "4.6.10",
+    "jsr:@showichiro/validators@*": "0.1.0",
+    "jsr:@showichiro/validators@0.1": "0.1.0",
+    "jsr:@std/async@*": "1.0.8",
+    "jsr:@std/async@^1.0.8": "1.0.8",
+    "jsr:@std/cli@*": "1.0.6"
+  },
+  "jsr": {
+    "@hono/hono@4.6.10": {
+      "integrity": "dae93ac8bb49881f99506aa8e01e5536d5d72cc3c2b556bde2816fdf25ca609c"
+    },
+    "@showichiro/validators@0.1.0": {
+      "integrity": "6454b2b7fc9e18194b4a02351c2fc5b438d300c1431c2b67f592a2bbc827bf77"
+    },
+    "@std/async@1.0.8": {
+      "integrity": "c057c5211a0f1d12e7dcd111ab430091301b8d64b4250052a79d277383bc3ba7"
+    },
+    "@std/cli@1.0.6": {
+      "integrity": "d22d8b38c66c666d7ad1f2a66c5b122da1704f985d3c47f01129f05abb6c5d3d"
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@hono/hono@^4.6.10",
+      "jsr:@showichiro/validators@0.1",
+      "jsr:@std/async@^1.0.8"
+    ]
+  }
+}
