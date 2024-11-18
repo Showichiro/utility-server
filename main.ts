@@ -1,5 +1,6 @@
 import { createFactory } from "jsr:@hono/hono@^4.6.10/factory";
 import { HTTPException } from "jsr:@hono/hono@^4.6.10/http-exception";
+import { serveStatic } from "jsr:@hono/hono@^4.6.10/deno";
 import { delay } from "jsr:@std/async/delay";
 import { logger } from "jsr:@hono/hono@^4.6.10/logger";
 import { parseArgs } from "jsr:@std/cli/parse-args";
@@ -7,19 +8,21 @@ import { $numericString } from "jsr:@showichiro/validators";
 
 const HELP = `
 Usage:
-  --mode     Mode of operation [echo|internal-server-error|delay]. Default is echo.
-  --port     Port to listen on. Default is 3000.
-  --delay-time    Delay time in milliseconds for delay mode. Default is 3000.
+  --mode              Mode of operation [echo|internal-server-error|delay|static]. Default is echo.
+  --port              Port to listen on. Default is 3000.
+  --delay-time        Delay time in milliseconds for delay mode. Default is 3000.
+  --static-path       Path for serving static files. Defaults to current directory.
 ` as const;
 
 enum Mode {
   INTERNAL_SERVER_ERROR = "internal-server-error",
   ECHO = "echo",
   DELAY = "delay",
+  STATIC = "static",
 }
 
 const args = parseArgs(Deno.args, {
-  string: ["mode", "port", "delay-time"],
+  string: ["mode", "port", "delay-time", "static-path"],
   boolean: ["help"],
   default: {
     mode: Mode.ECHO,
@@ -30,7 +33,7 @@ const args = parseArgs(Deno.args, {
 
 const factory = createFactory();
 
-const echoHandlers = factory.createHandlers(async (c) => {
+const echoHandlers = factory.createHandlers(logger(), async (c) => {
   const query = c.req.query();
   const path = c.req.path;
   const bodyText = await c.req.text();
@@ -45,17 +48,22 @@ const echoHandlers = factory.createHandlers(async (c) => {
   return c.json(res);
 });
 
-const internalServerErrorHandlers = factory.createHandlers(() => {
+const internalServerErrorHandlers = factory.createHandlers(logger(), () => {
   throw new HTTPException(500);
 });
 
-const delayHandlers = factory.createHandlers(async (c) => {
+const delayHandlers = factory.createHandlers(logger(), async (c) => {
   if (!$numericString(args["delay-time"])) {
     throw new HTTPException(500, { message: "invalid delay time" });
   }
   await delay(Number(args["delay-time"]));
   return c.text("delayed");
 });
+
+const staticHandlers = factory.createHandlers(
+  logger(),
+  serveStatic({ root: args["static-path"] ?? import.meta.dirname ?? "." }),
+);
 
 const selectHandler = (mode: string) => {
   switch (mode) {
@@ -65,6 +73,8 @@ const selectHandler = (mode: string) => {
       return internalServerErrorHandlers;
     case Mode.DELAY:
       return delayHandlers;
+    case Mode.STATIC:
+      return staticHandlers;
     default:
       return echoHandlers;
   }
@@ -87,8 +97,6 @@ if (import.meta.main) {
   const handler = selectHandler(mode);
 
   app.all("*", ...handler);
-
-  app.use(logger());
 
   Deno.serve({ port: Number(port) }, app.fetch);
 }
